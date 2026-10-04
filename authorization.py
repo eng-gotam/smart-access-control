@@ -1,55 +1,56 @@
 import pickle
-import cv2
+import base64
+import os
 
 from face_recognation import compare_faces
 
-
-# --------------------------------
-# Face database path
-# --------------------------------
-
 DATABASE_PATH = "face_database.pkl"
-
-
-# --------------------------------
-# Authorization threshold
-# --------------------------------
-
 COSINE_THRESHOLD = 0.60
 
 
-# --------------------------------
-# Load face database
-# --------------------------------
-
 def load_face_database():
 
+    # 1. Try local database first
+    if os.path.exists(DATABASE_PATH):
+        try:
+            with open(DATABASE_PATH, "rb") as file:
+                return pickle.load(file)
+        except Exception as e:
+            print(f"Error loading local face database: {e}")
+
+    # 2. Try Streamlit Secrets
     try:
+        import streamlit as st
 
-        with open(DATABASE_PATH, "rb") as file:
-            face_database = pickle.load(file)
+        if "FACE_DATABASE" in st.secrets:
 
-        return face_database
+            encoded_database = st.secrets["FACE_DATABASE"]
 
-    except FileNotFoundError:
+            database_bytes = base64.b64decode(
+                encoded_database
+            )
 
-        print("Face database not found.")
-        return {}
+            face_database = pickle.loads(
+                database_bytes
+            )
 
+            return face_database
 
-# --------------------------------
-# Find best matching person
-# --------------------------------
+    except Exception as e:
+        print(f"Error loading face database from secrets: {e}")
+
+    print("Face database not found.")
+
+    return {}
+
 
 def find_best_match(face_feature, face_database):
 
     best_name = "Unknown"
     best_score = -1.0
 
-    # Go through every person
     for person_name, stored_features in face_database.items():
 
-        # Compare with every feature of that person
         for stored_feature in stored_features:
 
             score = compare_faces(
@@ -58,20 +59,14 @@ def find_best_match(face_feature, face_database):
             )
 
             if score > best_score:
-
                 best_score = score
                 best_name = person_name
 
     return best_name, best_score
 
 
-# --------------------------------
-# Authorize face
-# --------------------------------
-
 def authorize_face(face_feature):
 
-    # Load database
     face_database = load_face_database()
 
     if not face_database:
@@ -82,13 +77,11 @@ def authorize_face(face_feature):
             "score": 0.0
         }
 
-    # Find best match
     best_name, best_score = find_best_match(
         face_feature,
         face_database
     )
 
-    # Check threshold
     if best_score >= COSINE_THRESHOLD:
 
         return {
@@ -106,10 +99,6 @@ def authorize_face(face_feature):
         }
 
 
-# --------------------------------
-# Simple test
-# --------------------------------
-
 if __name__ == "__main__":
 
     database = load_face_database()
@@ -123,8 +112,7 @@ if __name__ == "__main__":
         for person_name, features in database.items():
 
             print(
-                f"- {person_name}: "
-                f"{len(features)} features"
+                f"- {person_name}: {len(features)} features"
             )
 
     else:

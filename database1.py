@@ -1,5 +1,7 @@
 import sqlite3
 
+from data.users.gotam import create_database
+
 
 DATABASE_PATH = "access_control.db"
 
@@ -8,30 +10,21 @@ DATABASE_PATH = "access_control.db"
 # Create database and tables
 # --------------------------------
 
-def create_database():
+def add_access_log(name, status, score):
+
+    create_database()
 
     connection = sqlite3.connect(DATABASE_PATH)
+
     cursor = connection.cursor()
 
-    # Existing user table
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS user_access(
-            id INTEGER PRIMARY KEY,
-            name TEXT NOT NULL,
-            authorized INTEGER NOT NULL
-        )
-    """)
-
-    # New access log table
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS access_logs(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            status TEXT NOT NULL,
-            score REAL,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
+    cursor.execute(
+        """
+        INSERT INTO access_logs(name, status, score)
+        VALUES (?, ?, ?)
+        """,
+        (name, status, score)
+    )
 
     connection.commit()
     connection.close()
