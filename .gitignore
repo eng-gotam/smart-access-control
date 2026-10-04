@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+
+access_control.db
+face_database.pkl
+
+.env
+.venv/
+venv/
+
+.DS_Store
