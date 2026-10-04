@@ -4,6 +4,8 @@ __pycache__/
 access_control.db
 face_database.pkl
 
+data/users/
+
 .env
 .venv/
 venv/
